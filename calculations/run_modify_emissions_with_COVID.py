@@ -4,10 +4,12 @@ import numpy as np
 import reverse_geocoder as rg
 from multiprocessing import freeze_support, Pool
 
+from utils import copy_netcdf_file
+
 def main():
     freeze_support()
     # ____________________________Define inputs_______________________________________
-    input_folder = "../input/"
+    input_folder = "../input/aerosols/"
     output_folder = "../output/"
 
     input_co2_mole = "mole-fraction-of-carbon-dioxide-in-air_input4MIPs_GHGConcentrations_ScenarioMIP_UoM-MESSAGE-GLOBIOM-ssp245-1-2-0_gr1-GMNHSH_2015-2500.nc"
@@ -31,7 +33,7 @@ def main():
         "CO_em_anthro", "NH3_em_anthro", "NMVIC_em_anthro",
         # "OC_em_anthro", "SO2_em_anthro", "NOx_em_anthro", "BC_em_anthro"
     ]
-    scenario_string = "_blip.nc"
+    scenario_string = "_test.nc"
 
     assert len(files_to_blip) == len(key_variables) # check input
 
@@ -193,32 +195,6 @@ def main():
                         break
         data.variables[key_variables[fileind]] = output
         data.close()
-
-
-def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
-    src = nc.Dataset(input_folder + filename)
-    trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
-
-    # Create the dimensions of the file
-    for name, dim in src.dimensions.items():
-        trg.createDimension(name, len(dim) if not dim.isunlimited() else None)
-
-    # Copy the global attributes
-    trg.setncatts({a:src.getncattr(a) for a in src.ncattrs()})
-
-    # Create the variables in the file
-    for name, var in src.variables.items():
-        trg.createVariable(name, var.dtype, var.dimensions, complevel=9)
-
-        # Copy the variable attributes
-        trg.variables[name].setncatts({a:var.getncattr(a) for a in var.ncattrs()})
-
-        # Copy the variables values (as 'f4' eventually)
-        trg.variables[name][:] = src.variables[name][:]
-
-    # Return the data
-    src.close()
-    return trg
 
 
 if __name__ == "__main__":
