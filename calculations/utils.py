@@ -25,3 +25,5 @@ def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
     # Return the data
     src.close()
     return trg
+
+# def insert_interpolated_point(db, time_ind):
