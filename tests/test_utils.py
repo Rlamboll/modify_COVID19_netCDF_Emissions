@@ -45,6 +45,7 @@ def test_insert_interpolated_point():
     newtime = 5.5
     expected_results = (new_scc.variables["temp"][5, :, :, :] +
             new_scc.variables["temp"][6, :, :, :]) / 2
+    orig_vals = new_scc.variables["temp"][:, :, :, :]
     insert_interpolated_point(new_scc, newtime)
     assert len(new_scc.variables["temp"][:, :, :, :]) == startsize + 1
     assert all(
@@ -56,3 +57,10 @@ def test_insert_interpolated_point():
     assert np.allclose(
         new_scc.variables["temp"][6, :, :, :], expected_results
     )
+    assert np.allclose(new_scc.variables["temp"][-3:-1, :, :, :], orig_vals[-3:-1, :, :, :])
+    secondtime = 6.5
+    # This is between
+    expected_results_2 = (expected_results * 2.5 + new_scc.variables["temp"][10, :, :, :] * 1) / 3.5
+    insert_interpolated_point(new_scc, secondtime, 2, 3)
+    assert len(new_scc.variables["temp"][:, :, :, :]) == startsize + 2
+    assert np.allclose(new_scc.variables["temp"][8, :, :, :], expected_results_2)

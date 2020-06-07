@@ -26,24 +26,28 @@ def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
     src.close()
     return trg
 
-def insert_interpolated_point(db, time_to_add):
+def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
     times = db.variables["time"][:]
     if any(times == time_to_add):
         raise ValueError("time already in the database")
     after_time_ind = np.where(times > time_to_add)[0].min()
     assert after_time_ind > 0, "Cannot add element before the start by interpolation"
-    step_before = (time_to_add - db.variables["time"][after_time_ind - 1]) / (
-        db.variables["time"][after_time_ind] - db.variables["time"][after_time_ind - 1]
+    step_before = (time_to_add - db.variables["time"][after_time_ind - ind_before]) / (
+        db.variables["time"][after_time_ind + ind_after - 1]
+        - db.variables["time"][after_time_ind - ind_before]
     )
     assert step_before < 1
     db.variables["time"][after_time_ind:len(times) + 1] = db.variables["time"][after_time_ind - 1:len(times)]
     db.variables["time"][after_time_ind] = time_to_add
     for var in db.variables:
         if "time" in db.variables[var].dimensions and var != "time":
+            db.variables[var][-1, ...] = db.variables[var][-2, ...]
             db.variables[var][
-                after_time_ind:len(times), ...
-            ] = db.variables[var][after_time_ind - 1:len(times) - 1, ...]
+                after_time_ind:-1, ...
+            ] = db.variables[var][after_time_ind - 1: -2, ...]
+            # We weight the values before and after in proportion to closeness,
+            # which is 1 - the fraction of the step between the points.
             db.variables[var][after_time_ind, ...] = (
-                db.variables[var][after_time_ind - 1, ...] * step_before
-                + db.variables[var][after_time_ind + 1, ...] * (1 - step_before)
+                db.variables[var][after_time_ind - ind_before, ...] * (1 - step_before)
+                + db.variables[var][after_time_ind + ind_after, ...] * step_before
             )
