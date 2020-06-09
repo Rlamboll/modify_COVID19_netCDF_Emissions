@@ -2,7 +2,8 @@ import netCDF4 as nc
 import numpy as np
 import os
 
-from ..calculations.utils import copy_netcdf_file, insert_interpolated_point
+from ..calculations.utils import copy_netcdf_file, \
+    insert_interpolated_point, cutoff_netcdf_time, cutoff_netcdf_time_2
 
 nsect = 5
 latlen = 12
@@ -64,3 +65,16 @@ def test_insert_interpolated_point():
     insert_interpolated_point(new_scc, secondtime, 2, 3)
     assert len(new_scc.variables["temp"][:, :, :, :]) == startsize + 2
     assert np.allclose(new_scc.variables["temp"][8, :, :, :], expected_results_2)
+    new_scc.close()
+    os.remove(folder + test_file + name_append)
+
+def test_cutoff_time():
+    new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
+    orig_size = new_scc["temp"].shape
+    new_scc.close()
+    tcutoff = 6
+    new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff)
+    assert new_scc["temp"].shape[0] == 7
+    assert new_scc["temp"].shape[1:] == orig_size[1:]
+    new_scc.close()
+    # os.remove(folder + test_file + "cro")

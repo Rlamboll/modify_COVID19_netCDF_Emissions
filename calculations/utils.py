@@ -1,5 +1,6 @@
 import netCDF4 as nc
 import numpy as np
+import xarray
 
 def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
     src = nc.Dataset(input_folder + filename)
@@ -14,7 +15,7 @@ def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
 
     # Create the variables in the file
     for name, var in src.variables.items():
-        trg.createVariable(name, var.dtype, var.dimensions, complevel=9)
+        trg.createVariable(name, var.dtype, var.dimensions)
 
         # Copy the variable attributes
         trg.variables[name].setncatts({a:var.getncattr(a) for a in var.ncattrs()})
@@ -51,3 +52,41 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
                 db.variables[var][after_time_ind - ind_before, ...] * (1 - step_before)
                 + db.variables[var][after_time_ind + ind_after, ...] * step_before
             )
+
+def cutoff_netcdf_time(
+    input_folder, output_folder, filename, tcutoff, scenario_string="_cropped"
+):
+    db = nc.Dataset(input_folder + filename)
+    trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
+    times = db.variables["time"][:]
+    assert tcutoff > min(times)
+    if tcutoff > max(times):
+        return
+    valid_times = np.where(times <= tcutoff)[0]
+
+    # Create the dimensions of the file
+    for name, dim in db.dimensions.items():
+        trg.createDimension(name, len(dim) if not dim.isunlimited() else None)
+
+    # Copy the global attributes
+    trg.setncatts({a: db.getncattr(a) for a in db.ncattrs()})
+
+    # Create the variables in the file
+    for name, var in db.variables.items():
+        trg.createVariable(name, var.dtype, var.dimensions)
+
+        # Copy the variable attributes
+        trg.variables[name].setncatts({a: var.getncattr(a) for a in var.ncattrs()})
+
+        # Copy the variables values, removing some times if neededs
+        if "time" in var.dimensions[:]:
+            if len(var.dimensions) == 1:  # We assume time is the first dimension
+                trg.variables[name][:] = db.variables[name][valid_times]
+            else:
+                trg.variables[name][:] = db.variables[name][:max(valid_times), ...]
+        else:
+            trg.variables[name][:] = db.variables[name][:]
+
+    # Return the data
+    db.close()
+    return trg
