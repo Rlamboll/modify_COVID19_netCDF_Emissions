@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 from ..calculations.utils import copy_netcdf_file, \
-    insert_interpolated_point, cutoff_netcdf_time, cutoff_netcdf_time_2
+    insert_interpolated_point, cutoff_netcdf_time
 
 nsect = 5
 latlen = 12
@@ -77,4 +77,4 @@ def test_cutoff_time():
     assert new_scc["temp"].shape[0] == 7
     assert new_scc["temp"].shape[1:] == orig_size[1:]
     new_scc.close()
-    # os.remove(folder + test_file + "cro")
+    os.remove(folder + test_file + "_cropped.nc")

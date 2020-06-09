@@ -1,6 +1,5 @@
 import netCDF4 as nc
 import numpy as np
-import xarray
 
 def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
     src = nc.Dataset(input_folder + filename)
@@ -54,7 +53,7 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
             )
 
 def cutoff_netcdf_time(
-    input_folder, output_folder, filename, tcutoff, scenario_string="_cropped"
+    input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc"
 ):
     db = nc.Dataset(input_folder + filename)
     trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
