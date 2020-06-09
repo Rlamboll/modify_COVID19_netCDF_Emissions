@@ -65,7 +65,9 @@ def cutoff_netcdf_time(
 
     # Create the dimensions of the file
     for name, dim in db.dimensions.items():
-        trg.createDimension(name, len(dim) if not dim.isunlimited() else None)
+        trg.createDimension(
+            name, len(dim) if not (dim.isunlimited()) and not (name == "time") else None
+        )
 
     # Copy the global attributes
     trg.setncatts({a: db.getncattr(a) for a in db.ncattrs()})
@@ -77,7 +79,7 @@ def cutoff_netcdf_time(
         # Copy the variable attributes
         trg.variables[name].setncatts({a: var.getncattr(a) for a in var.ncattrs()})
 
-        # Copy the variables values, removing some times if neededs
+        # Copy the variables values, removing some times if needed
         if "time" in var.dimensions[:]:
             if len(var.dimensions) == 1:  # We assume time is the first dimension
                 trg.variables[name][:] = db.variables[name][valid_times]
