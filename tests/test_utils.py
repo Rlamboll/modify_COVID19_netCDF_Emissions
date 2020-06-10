@@ -5,14 +5,14 @@ import os
 from ..calculations.utils import copy_netcdf_file, \
     insert_interpolated_point, cutoff_netcdf_time
 
-nsect = 5
+sectlen = 5
 latlen = 12
 lonlen = 15
 timeslen = 10
 test_file = "test_file.nc"
 test_db = nc.Dataset(test_file, mode="w", format="NETCDF4")
 test_db.createDimension("time", None)
-test_db.createDimension("sector", nsect)
+test_db.createDimension("sector", sectlen)
 test_db.createDimension("lat", latlen)
 test_db.createDimension("lon", lonlen)
 times = test_db.createVariable("time", float, ("time",))
@@ -20,24 +20,28 @@ sectors = test_db.createVariable("sector", int, ("sector",))
 lats = test_db.createVariable("lat", float, ("lat",))
 lons = test_db.createVariable("lon", float, ("lon",))
 temp = test_db.createVariable("temp", float, ("time", "sector", "lat", "lon"))
+time_bands = test_db.createVariable("time_bands", float, ("time", "sector"))
 times[:] = np.arange(timeslen)
-sectors[:] = list(range(nsect))
+sectors[:] = list(range(sectlen))
 lats[:] = np.arange(latlen)
 lons[:] = np.arange(lonlen)
 temp[:, :, :, :] = (
-        times[:].reshape(timeslen, 1, 1, 1) * sectors[:].reshape(1, nsect, 1, 1) *
+        times[:].reshape(timeslen, 1, 1, 1) * sectors[:].reshape(1, sectlen, 1, 1) *
         lats[:].reshape(1, 1, latlen, 1) * lons[:].reshape(1, 1, 1, lonlen)
 )
+time_bands[:, :] = times[:].reshape(timeslen, 1) * sectors[:].reshape(1, sectlen)
 test_db.close()
 
 name_append = "_clone"
 folder = "./"
+
 
 def test_copy_netcdf():
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
     assert os.path.isfile(folder + test_file + name_append)
     new_scc.close()
     os.remove(folder + test_file + name_append)
+
 
 def test_insert_interpolated_point():
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
@@ -68,6 +72,7 @@ def test_insert_interpolated_point():
     new_scc.close()
     os.remove(folder + test_file + name_append)
 
+
 def test_cutoff_time():
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
     orig_size = new_scc["temp"].shape
@@ -76,5 +81,8 @@ def test_cutoff_time():
     new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff)
     assert new_scc["temp"].shape[0] == 7
     assert new_scc["temp"].shape[1:] == orig_size[1:]
+    assert new_scc["temp"][-1, 0, 0, 0] == 0
+    assert new_scc["time_bands"][-1, 0] == 0
     new_scc.close()
     os.remove(folder + test_file + "_cropped.nc")
+

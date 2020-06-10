@@ -85,7 +85,7 @@ def cutoff_netcdf_time(
             if len(var.dimensions) == 1:  # We assume time is the first dimension
                 trg.variables[name][:] = db.variables[name][valid_times]
             else:
-                trg.variables[name][:] = db.variables[name][:max(valid_times), ...]
+                trg.variables[name][:] = db.variables[name][:max(valid_times) + 1, ...]
         else:
             trg.variables[name][:] = db.variables[name][:]
 
