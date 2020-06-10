@@ -55,6 +55,7 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
 def cutoff_netcdf_time(
     input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc"
 ):
+    # This function cuts off data after a particular time and also compresses it.
     db = nc.Dataset(input_folder + filename)
     trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
     times = db.variables["time"][:]
@@ -74,7 +75,7 @@ def cutoff_netcdf_time(
 
     # Create the variables in the file
     for name, var in db.variables.items():
-        trg.createVariable(name, var.dtype, var.dimensions)
+        trg.createVariable(name, var.dtype, var.dimensions, complevel=9, shuffle=True, zlib=True)
 
         # Copy the variable attributes
         trg.variables[name].setncatts({a: var.getncattr(a) for a in var.ncattrs()})
