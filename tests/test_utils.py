@@ -84,5 +84,5 @@ def test_cutoff_time():
     assert new_scc["temp"][-1, 0, 0, 0] == 0
     assert new_scc["time_bands"][-1, 0] == 0
     new_scc.close()
-    os.remove(folder + test_file + "_cropped.nc")
+    os.remove(folder + "cut_" + test_file + "_cropped.nc")
 

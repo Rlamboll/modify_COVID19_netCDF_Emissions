@@ -57,7 +57,7 @@ def cutoff_netcdf_time(
 ):
     # This function cuts off data after a particular time and also compresses it.
     db = nc.Dataset(input_folder + filename)
-    trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
+    trg = nc.Dataset(output_folder +"cut_" + filename + scenario_string, mode='w')
     times = db.variables["time"][:]
     assert tcutoff > min(times)
     if tcutoff > max(times):
