@@ -1,6 +1,7 @@
 import netCDF4 as nc
 import numpy as np
 import os
+import pytest
 
 from ..calculations.utils import copy_netcdf_file, \
     insert_interpolated_point, cutoff_netcdf_time
@@ -36,8 +37,11 @@ name_append = "_clone"
 folder = "./"
 
 
-def test_copy_netcdf():
-    new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
+@pytest.mark.parametrize("compress", [True, False])
+def test_copy_netcdf(compress):
+    new_scc = copy_netcdf_file(
+        test_file, folder, folder, name_append, compress=compress
+    )
     assert os.path.isfile(folder + test_file + name_append)
     new_scc.close()
     os.remove(folder + test_file + name_append)
@@ -72,13 +76,13 @@ def test_insert_interpolated_point():
     new_scc.close()
     os.remove(folder + test_file + name_append)
 
-
-def test_cutoff_time():
+@pytest.mark.parametrize("compress", [True, False])
+def test_cutoff_time(compress):
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
     orig_size = new_scc["temp"].shape
     new_scc.close()
     tcutoff = 6
-    new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff)
+    new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff, compress=compress)
     assert new_scc["temp"].shape[0] == 7
     assert new_scc["temp"].shape[1:] == orig_size[1:]
     assert new_scc["temp"][-1, 0, 0, 0] == 0

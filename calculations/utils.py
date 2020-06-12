@@ -1,7 +1,9 @@
 import netCDF4 as nc
 import numpy as np
 
-def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
+def copy_netcdf_file(
+        filename, input_folder, output_folder, scenario_string, compress=False
+):
     src = nc.Dataset(input_folder + filename)
     trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
 
@@ -14,8 +16,12 @@ def copy_netcdf_file(filename, input_folder, output_folder, scenario_string):
 
     # Create the variables in the file
     for name, var in src.variables.items():
-        trg.createVariable(name, var.dtype, var.dimensions)
-
+        if compress:
+            trg.createVariable(
+                name, var.dtype, var.dimensions, complevel=9, shuffle=True, zlib=True
+            )
+        else:
+            trg.createVariable(name, var.dtype, var.dimensions)
         # Copy the variable attributes
         trg.variables[name].setncatts({a:var.getncattr(a) for a in var.ncattrs()})
 
@@ -53,9 +59,11 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
             )
 
 def cutoff_netcdf_time(
-    input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc"
+    input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc",
+    compress=True
 ):
-    # This function cuts off data after a particular time and also compresses it.
+    # This function cuts off data after a particular time and also compresses it if
+    # compress == True.
     db = nc.Dataset(input_folder + filename)
     trg = nc.Dataset(output_folder +"cut_" + filename + scenario_string, mode='w')
     times = db.variables["time"][:]
@@ -75,7 +83,12 @@ def cutoff_netcdf_time(
 
     # Create the variables in the file
     for name, var in db.variables.items():
-        trg.createVariable(name, var.dtype, var.dimensions, complevel=9, shuffle=True, zlib=True)
+        if compress:
+            trg.createVariable(
+                name, var.dtype, var.dimensions, complevel=9, shuffle=True, zlib=True
+            )
+        else:
+            trg.createVariable(name, var.dtype, var.dimensions)
 
         # Copy the variable attributes
         trg.variables[name].setncatts({a: var.getncattr(a) for a in var.ncattrs()})
