@@ -10,8 +10,9 @@ sectlen = 5
 latlen = 12
 lonlen = 15
 timeslen = 10
+folder = os.path.join(os.path.abspath(__file__), "..", "testData/")
 test_file = "test_file.nc"
-test_db = nc.Dataset(test_file, mode="w", format="NETCDF4")
+test_db = nc.Dataset(folder + test_file, mode="w", format="NETCDF4")
 test_db.createDimension("time", None)
 test_db.createDimension("sector", sectlen)
 test_db.createDimension("lat", latlen)
@@ -34,7 +35,6 @@ time_bands[:, :] = times[:].reshape(timeslen, 1) * sectors[:].reshape(1, sectlen
 test_db.close()
 
 name_append = "_clone"
-folder = "./"
 
 
 @pytest.mark.parametrize("compress", [True, False])
@@ -76,6 +76,7 @@ def test_insert_interpolated_point():
     new_scc.close()
     os.remove(folder + test_file + name_append)
 
+
 @pytest.mark.parametrize("compress", [True, False])
 def test_cutoff_time(compress):
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
@@ -89,4 +90,11 @@ def test_cutoff_time(compress):
     assert new_scc["time_bands"][-1, 0] == 0
     new_scc.close()
     os.remove(folder + "cut_" + test_file + "_cropped.nc")
+    new_scc = cutoff_netcdf_time(
+        folder, folder, test_file, tcutoff, compress=compress, remove_string="il"
+    )
+    new_scc.close()
+    assert os.path.isfile(folder + "cut_" + "test_fe.nc_cropped.nc")
+    os.remove(folder + "cut_" + "test_fe.nc_cropped.nc")
+    os.remove(folder + "test_file.nc_clone")
 

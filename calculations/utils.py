@@ -2,10 +2,18 @@ import netCDF4 as nc
 import numpy as np
 
 def copy_netcdf_file(
-        filename, input_folder, output_folder, scenario_string, compress=False
+        filename, input_folder, output_folder,
+        scenario_string, compress=False, remove_string=None
 ):
     src = nc.Dataset(input_folder + filename)
-    trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
+    if remove_string:
+        trg = nc.Dataset(
+            output_folder + filename.replace(remove_string, "") +
+            scenario_string,
+            mode='w'
+        )
+    else:
+        trg = nc.Dataset(output_folder + filename + scenario_string, mode='w')
 
     # Create the dimensions of the file
     for name, dim in src.dimensions.items():
@@ -60,12 +68,19 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
 
 def cutoff_netcdf_time(
     input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc",
-    compress=True
+    compress=True, remove_string=None
 ):
     # This function cuts off data after a particular time and also compresses it if
     # compress == True.
     db = nc.Dataset(input_folder + filename)
-    trg = nc.Dataset(output_folder +"cut_" + filename + scenario_string, mode='w')
+    if remove_string:
+        trg = nc.Dataset(
+            output_folder + "cut_" + filename.replace(remove_string, "") +
+            scenario_string,
+            mode='w'
+        )
+    else:
+        trg = nc.Dataset(output_folder + "cut_" + filename + scenario_string, mode='w')
     times = db.variables["time"][:]
     assert tcutoff > min(times)
     if tcutoff > max(times):
