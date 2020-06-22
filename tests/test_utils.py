@@ -93,8 +93,18 @@ def test_cutoff_time(compress):
     new_scc = cutoff_netcdf_time(
         folder, folder, test_file, tcutoff, compress=compress, remove_string="il"
     )
+    assert new_scc["temp"].shape[0] == 7
     new_scc.close()
     assert os.path.isfile(folder + "cut_" + "test_fe.nc_cropped.nc")
     os.remove(folder + "cut_" + "test_fe.nc_cropped.nc")
+    tstart = 2
+    new_scc = cutoff_netcdf_time(
+        folder, folder, test_file, tcutoff, compress=compress, tstart=tstart
+    )
+    assert new_scc["temp"].shape[0] == 5
+    assert min(new_scc["time"][:]) == tstart
+    assert max(new_scc["time"][:]) == tcutoff
+    new_scc.close()
+    os.remove(folder + "cut_" + test_file + "_cropped.nc")
     os.remove(folder + "test_file.nc_clone")
 

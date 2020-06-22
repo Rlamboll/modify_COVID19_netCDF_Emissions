@@ -68,7 +68,7 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
 
 def cutoff_netcdf_time(
     input_folder, output_folder, filename, tcutoff, scenario_string="_cropped.nc",
-    compress=True, remove_string=None
+    compress=True, remove_string=None, tstart=None
 ):
     # This function cuts off data after a particular time and also compresses it if
     # compress == True.
@@ -85,7 +85,10 @@ def cutoff_netcdf_time(
     assert tcutoff > min(times)
     if tcutoff > max(times):
         return
-    valid_times = np.where(times <= tcutoff)[0]
+    if tstart:
+        valid_times = np.where((times <= tcutoff) & (times >= tstart))[0]
+    else:
+        valid_times = np.where(times <= tcutoff)[0]
 
     # Create the dimensions of the file
     for name, dim in db.dimensions.items():
@@ -113,7 +116,7 @@ def cutoff_netcdf_time(
             if len(var.dimensions) == 1:  # We assume time is the first dimension
                 trg.variables[name][:] = db.variables[name][valid_times]
             else:
-                trg.variables[name][:] = db.variables[name][:max(valid_times) + 1, ...]
+                trg.variables[name][:] = db.variables[name][valid_times, ...]
         else:
             trg.variables[name][:] = db.variables[name][:]
 
