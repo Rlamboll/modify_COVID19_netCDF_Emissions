@@ -1,5 +1,6 @@
 import netCDF4 as nc
 import numpy as np
+import os
 
 def copy_netcdf_file(
         filename, input_folder, output_folder,
@@ -123,3 +124,19 @@ def cutoff_netcdf_time(
     # Return the data
     db.close()
     return trg
+
+def cleanup_files(output_folder, working_string, remove_scenario_string=None):
+    # This function removes files from the output folder if the filename ends in ".nc_",
+    # working_string or ".nc" + remove_scenario_string.
+    output_files = os.listdir(output_folder)
+    deletable_files = [
+        file for file in output_files if
+        (file[-4:] == ".nc_") or (file[-len(working_string):] == working_string)
+        or (
+            remove_scenario_string and
+            (file[-len(remove_scenario_string) - 3:] == ".nc" + remove_scenario_string)
+        )
+    ]
+    print("Deleting files {}".format(deletable_files))
+    for file in deletable_files:
+        os.remove(output_folder + file)
