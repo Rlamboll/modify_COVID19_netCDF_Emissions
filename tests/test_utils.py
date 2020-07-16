@@ -4,7 +4,7 @@ import os
 import pytest
 
 from ..calculations.utils import copy_netcdf_file, \
-    insert_interpolated_point, cutoff_netcdf_time
+    insert_interpolated_point, cutoff_netcdf_time, cleanup_files
 
 sectlen = 5
 latlen = 12
@@ -108,3 +108,24 @@ def test_cutoff_time(compress):
     os.remove(folder + "cut_" + test_file + "_cropped.nc")
     os.remove(folder + "test_file.nc_clone")
 
+def test_cleanup_files():
+    # We will add files and then check that they remove themselves properly. We will
+    # remove any files already there using the code itself.
+    work_str = "deleteme.nc"
+    cleanup_files(folder, working_string=work_str)
+    start_count = len(os.listdir(folder))
+    new_scc = copy_netcdf_file(test_file, folder, folder, "_")
+    new_scc.close()
+    new_scc = cutoff_netcdf_time(
+        folder, folder, test_file, 1, scenario_string=work_str
+    )
+    new_scc.close()
+    mid_count = len(os.listdir(folder))
+    assert mid_count == start_count + 2
+    cleanup_files(folder, working_string=work_str)
+    assert len(os.listdir(folder)) == start_count
+    new_scc = copy_netcdf_file(test_file, folder, folder, work_str)
+    new_scc.close()
+    assert len(os.listdir(folder)) == start_count + 1
+    cleanup_files(folder, working_string="not used", remove_scenario_string=work_str)
+    assert len(os.listdir(folder)) == start_count
