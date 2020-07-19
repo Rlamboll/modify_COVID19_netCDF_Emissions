@@ -21,17 +21,17 @@ times = test_db.createVariable("time", float, ("time",))
 sectors = test_db.createVariable("sector", int, ("sector",))
 lats = test_db.createVariable("lat", float, ("lat",))
 lons = test_db.createVariable("lon", float, ("lon",))
-temp = test_db.createVariable("temp", float, ("time", "sector", "lat", "lon"))
-time_bands = test_db.createVariable("time_bands", float, ("time", "sector"))
+temp = test_db.createVariable("temp", float, ("sector", "time", "lat", "lon"))
+time_bnds = test_db.createVariable("time_bands", float, ("time", "sector"))
 times[:] = np.arange(timeslen)
 sectors[:] = list(range(sectlen))
 lats[:] = np.arange(latlen)
 lons[:] = np.arange(lonlen)
 temp[:, :, :, :] = (
-        times[:].reshape(timeslen, 1, 1, 1) * sectors[:].reshape(1, sectlen, 1, 1) *
+        sectors[:].reshape(sectlen, 1, 1, 1) * times[:].reshape(1, timeslen, 1, 1) *
         lats[:].reshape(1, 1, latlen, 1) * lons[:].reshape(1, 1, 1, lonlen)
 )
-time_bands[:, :] = times[:].reshape(timeslen, 1) * sectors[:].reshape(1, sectlen)
+time_bnds[:, :] = times[:].reshape(timeslen, 1) * sectors[:].reshape(1, sectlen)
 test_db.close()
 
 name_append = "_clone"
@@ -49,24 +49,24 @@ def test_copy_netcdf(compress):
 
 def test_insert_interpolated_point():
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
-    startsize = len(new_scc.variables["temp"][:, :, :, :])
+    startsize = len(new_scc.variables["temp"][0, :, :, :])
     startshape = new_scc.variables["temp"][:, :, :, :].shape
     newtime = 5.5
-    expected_results = (new_scc.variables["temp"][5, :, :, :] +
-            new_scc.variables["temp"][6, :, :, :]) / 2
+    expected_results = (new_scc.variables["temp"][:, 5, :, :] +
+            new_scc.variables["temp"][:, 6, :, :]) / 2
     orig_vals = new_scc.variables["temp"][:, :, :, :]
     insert_interpolated_point(new_scc, newtime)
-    assert len(new_scc.variables["temp"][:, :, :, :]) == startsize + 1
+    assert len(new_scc.variables["temp"][0, :, :, :]) == startsize + 1
     assert all(
         new_scc.variables["temp"][
             :, :, :, :
-        ].shape[i] == startshape[i] for i in range(1, 3)
+        ].shape[i] == startshape[i] for i in [0, 2, 3]
     )
     assert new_scc.variables["time"][6] == newtime
     assert np.allclose(
         new_scc.variables["temp"][6, :, :, :], expected_results
     )
-    assert np.allclose(new_scc.variables["temp"][-3:-1, :, :, :], orig_vals[-3:-1, :, :, :])
+    assert np.allclose(new_scc.variables["temp"][:, -3:-1, :, :], orig_vals[ :, -3:-1,:, :])
     secondtime = 6.5
     # This is between
     expected_results_2 = (expected_results * 2.5 + new_scc.variables["temp"][10, :, :, :] * 1) / 3.5
@@ -84,7 +84,7 @@ def test_cutoff_time(compress):
     new_scc.close()
     tcutoff = 6
     new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff, compress=compress)
-    assert new_scc["temp"].shape[0] == 7
+    assert new_scc["temp"].shape[1] == 7
     assert new_scc["temp"].shape[1:] == orig_size[1:]
     assert new_scc["temp"][-1, 0, 0, 0] == 0
     assert new_scc["time_bands"][-1, 0] == 0

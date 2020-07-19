@@ -56,6 +56,20 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
     db.variables["time"][after_time_ind] = time_to_add
     for var in db.variables:
         if "time" in db.variables[var].dimensions and var != "time":
+            if db.variables[var].dimensions[1] == "time":
+                db.variables[var][:, -1, ...] = db.variables[var][:, -2, ...]
+                db.variables[var][
+                :, after_time_ind:-1, ...
+                ] = db.variables[var][:, after_time_ind - 1: -2, ...]
+                # We weight the values before and after in proportion to closeness,
+                # which is 1 - the fraction of the step between the points.
+                db.variables[var][:, after_time_ind, ...] = (
+                        db.variables[var][:, after_time_ind - ind_before, ...] * (
+                            1 - step_before)
+                        + db.variables[var][:, after_time_ind + ind_after,
+                          ...] * step_before
+                )
+        elif db.variables[var].dimensions[0] == "time":
             db.variables[var][-1, ...] = db.variables[var][-2, ...]
             db.variables[var][
                 after_time_ind:-1, ...
@@ -114,10 +128,12 @@ def cutoff_netcdf_time(
 
         # Copy the variables values, removing some times if needed
         if "time" in var.dimensions[:]:
-            if len(var.dimensions) == 1:  # We assume time is the first dimension
+            if len(var.dimensions) == 1:  # We assume time is the 2nd dimension if mult
                 trg.variables[name][:] = db.variables[name][valid_times]
-            else:
+            elif var.dimensions[0] == "time":
                 trg.variables[name][:] = db.variables[name][valid_times, ...]
+            else:
+                trg.variables[name][:] = db.variables[name][:, valid_times, ...]
         else:
             trg.variables[name][:] = db.variables[name][:]
 
