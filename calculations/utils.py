@@ -69,7 +69,7 @@ def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
                         + db.variables[var][:, after_time_ind + ind_after,
                           ...] * step_before
                 )
-        elif db.variables[var].dimensions[0] == "time":
+        elif db.variables[var].dimensions[0] == "time" and var != "time":
             db.variables[var][-1, ...] = db.variables[var][-2, ...]
             db.variables[var][
                 after_time_ind:-1, ...

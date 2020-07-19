@@ -64,7 +64,7 @@ def test_insert_interpolated_point():
     )
     assert new_scc.variables["time"][6] == newtime
     assert np.allclose(
-        new_scc.variables["temp"][6, :, :, :], expected_results
+        new_scc.variables["temp"][:, 6, :, :], expected_results
     )
     assert np.allclose(new_scc.variables["temp"][:, -3:-1, :, :], orig_vals[ :, -3:-1,:, :])
     secondtime = 6.5
@@ -85,8 +85,8 @@ def test_cutoff_time(compress):
     tcutoff = 6
     new_scc = cutoff_netcdf_time(folder, folder, test_file, tcutoff, compress=compress)
     assert new_scc["temp"].shape[1] == 7
-    assert new_scc["temp"].shape[1:] == orig_size[1:]
-    assert new_scc["temp"][-1, 0, 0, 0] == 0
+    assert new_scc["temp"].shape[2:] == orig_size[2:]
+    assert new_scc["temp"][0, -1, 0, 0] == 0
     assert new_scc["time_bands"][-1, 0] == 0
     new_scc.close()
     os.remove(folder + "cut_" + test_file + "_cropped.nc")
