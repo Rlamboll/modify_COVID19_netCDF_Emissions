@@ -22,16 +22,16 @@ sectors = test_db.createVariable("sector", int, ("sector",))
 lats = test_db.createVariable("lat", float, ("lat",))
 lons = test_db.createVariable("lon", float, ("lon",))
 temp = test_db.createVariable("temp", float, ("time", "sector", "lat", "lon"))
-time_bands = test_db.createVariable("time_bands", float, ("time", "sector"))
+time_bnds = test_db.createVariable("time_bands", float, ("sector", "time"))
 times[:] = np.arange(timeslen)
 sectors[:] = list(range(sectlen))
 lats[:] = np.arange(latlen)
 lons[:] = np.arange(lonlen)
 temp[:, :, :, :] = (
-        times[:].reshape(timeslen, 1, 1, 1) * sectors[:].reshape(1, sectlen, 1, 1) *
-        lats[:].reshape(1, 1, latlen, 1) * lons[:].reshape(1, 1, 1, lonlen)
+    times[:].reshape(timeslen, 1, 1, 1) * sectors[:].reshape(1, sectlen, 1, 1) *
+    lats[:].reshape(1, 1, latlen, 1) * lons[:].reshape(1, 1, 1, lonlen)
 )
-time_bands[:, :] = times[:].reshape(timeslen, 1) * sectors[:].reshape(1, sectlen)
+time_bnds[:, :] = sectors[:].reshape(sectlen, 1) * times[:].reshape(1, timeslen)
 test_db.close()
 
 name_append = "_clone"
