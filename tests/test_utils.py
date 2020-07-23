@@ -55,6 +55,7 @@ def test_insert_interpolated_point():
     expected_results = (new_scc.variables["temp"][5, :, :, :] +
             new_scc.variables["temp"][6, :, :, :]) / 2
     orig_vals = new_scc.variables["temp"][:, :, :, :]
+    startband = new_scc.variables["time_bands"][:, :]
     insert_interpolated_point(new_scc, newtime)
     assert len(new_scc.variables["temp"][:, :, :, :]) == startsize + 1
     assert all(
@@ -62,6 +63,9 @@ def test_insert_interpolated_point():
             :, :, :, :
         ].shape[i] == startshape[i] for i in range(1, 3)
     )
+    np.allclose(new_scc.variables["time_bands"][:, 0:5], startband[:, 0:5])
+    np.allclose(new_scc.variables["time_bands"][:, 7:], startband[:, 6:])
+    np.allclose(new_scc.variables["time_bands"][:, 6], (startband[:, 5] + startband[:, 6]) / 2)
     assert new_scc.variables["time"][6] == newtime
     assert np.allclose(
         new_scc.variables["temp"][6, :, :, :], expected_results
