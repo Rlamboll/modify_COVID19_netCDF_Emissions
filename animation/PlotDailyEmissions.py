@@ -8,10 +8,19 @@ import matplotlib.animation as anim
 
 # Load data
 include_aviation = False
-baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
-covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
-if include_aviation:
-    aviation_base_file = "../output/aviation/"
+if not include_aviation:
+    baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
+    covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+else:
+    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
+    av_varname = "CO2_em_air"
+    aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_workings_v4.5.nc"
+    aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_flightrd_mp06_daily_v4.5.nc"
+    base_av_ds = nc.Dataset(aviation_base_file)
+    covid_av_ds = nc.Dataset(aviation_covid_file)
+    covid = covid_data.variables[av_varname][:]
+    base = baseline_data.variables[av_varname][:]
 varname = "SO2_em_anthro"
 title_str = "Reduction in SO$_2$ emissions resulting from COVID-19 \n Date: {} {}."
 var_label = "SO$_2$ emissions ({})"
@@ -63,7 +72,7 @@ ax.coastlines(color="lightgrey")
 plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
-cb = fig.colorbar(line, ax=ax, format="%g   ")
+cb = fig.colorbar(line, ax=ax, format="%g")
 cb.ax.set_ylabel("Reduction in " + var_label.format(units))
 cb.ax.invert_yaxis()
 plt.text(-35, -105, "Dark grey implies a small emissions increase")
