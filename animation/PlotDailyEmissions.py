@@ -4,12 +4,14 @@ import matplotlib
 import netCDF4 as nc
 from matplotlib import pyplot as plt
 import matplotlib.animation as anim
-import seaborn
 
 
 # Load data
+include_aviation = False
 baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
 covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+if include_aviation:
+    aviation_base_file = "../output/aviation/"
 varname = "SO2_em_anthro"
 title_str = "Reduction in SO$_2$ emissions resulting from COVID-19 \n Date: {} {}."
 var_label = "SO$_2$ emissions ({})"
@@ -27,7 +29,7 @@ base_time = baseline_data.variables["time"][:]
 startind = 0
 endind = 180
 lowlim = 5.5
-savename = "animated_COVID_dif_{}_v3.gif".format(varname)
+savename = "output/animated_COVID_rel_{}_v4.gif".format(varname)
 
 # We want to plot some transform of the data to prevent nans from log(0)
 max_data = basesum.max()
@@ -45,8 +47,8 @@ def date_conv(days):
 fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-cmap = matplotlib.cm.get_cmap("YlGnBu")
-cmap.set_bad('white', 1.)
+cmap = matplotlib.cm.get_cmap("gist_earth")
+cmap.set_bad('dimgrey', 1.)
 plot_options = {
     "vmax": max_data,
     "vmin": max_data / 10**lowlim,
@@ -56,15 +58,15 @@ plot_options = {
     "extent": img_extent,
     "transform": ccrs.PlateCarree(),
 }
-line = ax.imshow(data_transform(basesum[startind, ::-1, :], max_data), **plot_options)
+line = ax.imshow(data_transform(basesum[startind+160, ::-1, :], max_data), **plot_options)
 ax.coastlines(color="lightgrey")
 plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
-cb = fig.colorbar(line, ax=ax, format="%d")
+cb = fig.colorbar(line, ax=ax, format="%g   ")
 cb.ax.set_ylabel("Reduction in " + var_label.format(units))
 cb.ax.invert_yaxis()
-plt.text(185, 60, "White = increased activity", rotation=90)
+plt.text(-35, -105, "Dark grey implies a small emissions increase")
 
 # initialization function: plot the background of each frame
 def init():
