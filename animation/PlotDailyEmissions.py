@@ -7,15 +7,25 @@ import matplotlib.animation as anim
 
 
 # Load data
-include_aviation = False
-baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
-covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
-if include_aviation:
-    aviation_base_file = "../output/aviation/"
-varname = "SO2_em_anthro"
-title_str = "Reduction in SO$_2$ emissions resulting from COVID-19 \n Date: {} {}."
-var_label = "SO$_2$ emissions ({})"
-units = "kg/km$^2$/day"
+include_aviation = True
+if not include_aviation:
+    baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
+    covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+else:
+    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
+    av_varname = "NOx_em_AIR_anthro"
+    aviation_base_file = "../output/aviation/cut_CO2-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.5.nc"
+    aviation_covid_file = "../output/aviation/cut_CO2-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_flightrd_mp06_v4.5.nc"
+    height_ax = 1
+    base_av_ds = nc.Dataset(aviation_base_file)
+    covid_av_ds = nc.Dataset(aviation_covid_file)
+    covid_av = covid_av_ds.variables[av_varname][:]
+    base_av = base_av_ds.variables[av_varname][:]
+    assert covid_av_ds.variables["time"][:] == base_av_ds.variables["time"][:]
+varname = "NOx_em_anthro"
+title_str = "Proportional reduction in SO$_2$ emissions resulting from COVID-19 \n Date: {} {}."
+var_label = "SO$_2$ emissions reduction"
 covid_data = nc.Dataset(covid_file)
 baseline_data = nc.Dataset(baseline_file)
 covid = covid_data.variables[varname][:]
@@ -24,7 +34,11 @@ lats = covid_data.variables['lat'][:]
 lons = covid_data.variables['lon'][:]
 img_extent = [min(lons), max(lons), min(lats), max(lats)]
 sect_ax = 1
-basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax)) #* 10 ** 6 * 3600 * 24
+if not include_aviation:
+    basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax))
+else:
+    basesum = (covid.sum(axis=sect_ax) + covid_av.sum(axis=height_ax)) / \
+              (base.sum(axis=sect_ax) + base_av.sum(axis=height_ax))
 base_time = baseline_data.variables["time"][:]
 startind = 0
 endind = 180
@@ -48,12 +62,11 @@ def date_conv(days):
 fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-cmap = matplotlib.cm.get_cmap("YlGnBu") # "gist_earth")
+cmap = matplotlib.cm.get_cmap("YlGnBu_r") # "gist_earth")
 cmap.set_bad('dimgrey', 1.)
 plot_options = {
     "vmax": max_data,
     "vmin": min_data,
-    # "norm": matplotlib.colors.LogNorm(vmin=max_data / 10**lowlim, vmax=max_data),
     "cmap": cmap,
     "origin": "upper",
     "extent": img_extent,
@@ -65,9 +78,7 @@ plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
 cb = fig.colorbar(line, ax=ax, format="%g")
-cb.ax.set_ylabel("Reduction in " + var_label.format(units))
-# cb.ax.invert_yaxis()
-plt.text(-35, -105, "Dark grey implies a small emissions increase")
+cb.ax.set_ylabel("Proportional reduction in " + var_label)
 
 # initialization function: plot the background of each frame
 def init():
