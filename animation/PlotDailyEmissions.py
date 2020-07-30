@@ -24,18 +24,19 @@ lats = covid_data.variables['lat'][:]
 lons = covid_data.variables['lon'][:]
 img_extent = [min(lons), max(lons), min(lats), max(lats)]
 sect_ax = 1
-basesum = (base.sum(axis=sect_ax) - covid.sum(axis=sect_ax)) * 10 ** 6 * 3600 * 24
+basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax)) #* 10 ** 6 * 3600 * 24
 base_time = baseline_data.variables["time"][:]
 startind = 0
 endind = 180
 lowlim = 5.5
-savename = "output/animated_COVID_rel_{}_v4.gif".format(varname)
+savename = "output/animated_COVID_rel_lin_{}_v4.gif".format(varname)
 
 # We want to plot some transform of the data to prevent nans from log(0)
 max_data = basesum.max()
+min_data = basesum.min()
 
 def data_transform(data, max_data):
-    return data + max_data * 1e-15
+    return data.filled(1)
 
 
 def date_conv(days):
@@ -47,12 +48,12 @@ def date_conv(days):
 fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-cmap = matplotlib.cm.get_cmap("gist_earth")
+cmap = matplotlib.cm.get_cmap("YlGnBu") # "gist_earth")
 cmap.set_bad('dimgrey', 1.)
 plot_options = {
     "vmax": max_data,
-    "vmin": max_data / 10**lowlim,
-    "norm": matplotlib.colors.LogNorm(vmin=max_data / 10**lowlim, vmax=max_data),
+    "vmin": min_data,
+    # "norm": matplotlib.colors.LogNorm(vmin=max_data / 10**lowlim, vmax=max_data),
     "cmap": cmap,
     "origin": "upper",
     "extent": img_extent,
@@ -63,9 +64,9 @@ ax.coastlines(color="lightgrey")
 plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
-cb = fig.colorbar(line, ax=ax, format="%g   ")
+cb = fig.colorbar(line, ax=ax, format="%g")
 cb.ax.set_ylabel("Reduction in " + var_label.format(units))
-cb.ax.invert_yaxis()
+# cb.ax.invert_yaxis()
 plt.text(-35, -105, "Dark grey implies a small emissions increase")
 
 # initialization function: plot the background of each frame
