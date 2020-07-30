@@ -7,10 +7,11 @@ import matplotlib.animation as anim
 
 
 # Load data
-include_aviation = True
+include_aviation = False
 if not include_aviation:
     baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
     covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+    varname = "SO2_em_anthro"
 else:
     baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
     covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
@@ -23,7 +24,7 @@ else:
     covid_av = covid_av_ds.variables[av_varname][:]
     base_av = base_av_ds.variables[av_varname][:]
     assert covid_av_ds.variables["time"][:] == base_av_ds.variables["time"][:]
-varname = "NOx_em_anthro"
+    varname = "NOx_em_anthro"
 title_str = "Proportional reduction in SO$_2$ emissions resulting from COVID-19 \n Date: {} {}."
 var_label = "SO$_2$ emissions reduction"
 covid_data = nc.Dataset(covid_file)
@@ -62,7 +63,7 @@ def date_conv(days):
 fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-cmap = matplotlib.cm.get_cmap("YlGnBu_r") # "gist_earth")
+cmap = matplotlib.cm.get_cmap("viridis_r")  # "gist_earth"
 cmap.set_bad('dimgrey', 1.)
 plot_options = {
     "vmax": max_data,
@@ -78,7 +79,7 @@ plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
 cb = fig.colorbar(line, ax=ax, format="%g")
-cb.ax.set_ylabel("Proportional reduction in " + var_label)
+cb.ax.set_ylabel("Proportional reduction")
 
 # initialization function: plot the background of each frame
 def init():
