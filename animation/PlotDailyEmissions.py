@@ -8,19 +8,22 @@ from matplotlib import pyplot as plt
 import matplotlib.animation as anim
 
 
+# This script plots animations of the NOx and SO2 data
+# (which depends on whether include_aviation is True)
+
 # Load data
-include_aviation = True
+include_aviation = False  # This switches between SO2 IF false and
 if not include_aviation:
-    baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
-    covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+    baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_baseline.nc"
+    covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_1_year.nc"
     varname = "SO2_em_anthro"
     title_str = "Fraction of usual SO$_2$ emissions due to COVID-19 \n Date: {} {}."
 else:
-    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_baseline.nc"
-    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.nc_1_year.nc"
+    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_baseline.nc"
+    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_1_year.nc"
     av_varname = "NOx_em_AIR_anthro"
-    aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.5.nc"
-    aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_v4.5.nc_flightrd_mp06_daily_v4.5.nc"
+    aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.7.nc"
+    aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_v4.7.nc_flightrd_mp06_daily_v4.7.nc"
     height_ax = 1
     base_av_ds = nc.Dataset(aviation_base_file)
     covid_av_ds = nc.Dataset(aviation_covid_file)
@@ -30,6 +33,7 @@ else:
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
+savename = "output/animated_COVID_rel_lin_{}_v6.gif".format(varname)
 covid_data = nc.Dataset(covid_file)
 baseline_data = nc.Dataset(baseline_file)
 covid = covid_data.variables[varname][:]
@@ -56,9 +60,7 @@ def interpolate_missing_times(ds, have_times, want_times, lats, lons):
 
 base_time = baseline_data.variables["time"][:]
 startind = 0
-endind = 180
-lowlim = 5.5
-savename = "output/animated_COVID_rel_lin_{}_v5.gif".format(varname)
+endind = 211
 if not include_aviation:
     basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax))
 else:
