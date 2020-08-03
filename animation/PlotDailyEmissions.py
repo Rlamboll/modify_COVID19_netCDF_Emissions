@@ -9,11 +9,10 @@ import matplotlib.animation as anim
 
 
 # This script plots animations of the NOx and SO2 data
-# (which depends on whether include_aviation is True)
 
+calc_nox = True  # This switches between SO2 if false and nox if true.
 # Load data
-include_aviation = False  # This switches between SO2 IF false and
-if not include_aviation:
+if not calc_nox:
     baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_baseline.nc"
     covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_1_year.nc"
     varname = "SO2_em_anthro"
@@ -24,7 +23,9 @@ else:
     av_varname = "NOx_em_AIR_anthro"
     aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.7.nc"
     aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_v4.7.nc_flightrd_mp06_daily_v4.7.nc"
+    # Which dimension index is the height (to be summed over)?
     height_ax = 1
+    # Read the aviation data
     base_av_ds = nc.Dataset(aviation_base_file)
     covid_av_ds = nc.Dataset(aviation_covid_file)
     covid_av = covid_av_ds.variables[av_varname][:]
@@ -33,7 +34,9 @@ else:
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
-savename = "output/animated_COVID_rel_lin_{}_v6.gif".format(varname)
+savename = "output/animated_COVID_rel_lin_{}_v6_light.gif".format(varname)
+
+# Load
 covid_data = nc.Dataset(covid_file)
 baseline_data = nc.Dataset(baseline_file)
 covid = covid_data.variables[varname][:]
@@ -44,7 +47,7 @@ img_extent = [min(lons), max(lons), min(lats), max(lats)]
 sect_ax = 1
 
 
-def data_transform(data, max_data):
+def data_transform(data, _):
     return data.filled(1)
 
 
@@ -55,15 +58,18 @@ def date_conv(days):
 
 def interpolate_missing_times(ds, have_times, want_times, lats, lons):
     interpolating_fn = RegularGridInterpolator((have_times, lats, lons), ds)
-    return interpolating_fn([(x, y, z) for x in want_times.filled(np.nan) for y in lats.filled(np.nan) for z in lons.filled(np.nan)])
+    return interpolating_fn(
+        [(x, y, z) for x in want_times.filled(np.nan) for y in lats.filled(np.nan) for z in lons.filled(np.nan)]
+    )
 
 
 base_time = baseline_data.variables["time"][:]
 startind = 0
-endind = 211
-if not include_aviation:
+endind = 210
+if not calc_nox:
     basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax))
 else:
+    # Need to include aviation emissions
     base_av_int = interpolate_missing_times(
         base_av.sum(axis=height_ax),
         base_av_ds.variables["time"][:],
@@ -78,8 +84,7 @@ else:
     ).reshape(endind - startind, len(lats), len(lons))
     basesum = (covid.sum(axis=sect_ax)[startind:endind, ...] + covid_av_int) / \
               (base.sum(axis=sect_ax)[startind:endind, ...] + base_av_int)
-
-# We want to plot some transform of the data to prevent nans from log(0)
+# We want to ensure the max and min values always fit on our scale
 max_data = basesum.max()
 min_data = basesum.min()
 
@@ -87,7 +92,7 @@ min_data = basesum.min()
 fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
-cmap = matplotlib.cm.get_cmap("viridis_r")  # "gist_earth"
+cmap = matplotlib.cm.get_cmap("inferno")  # "gist_earth"
 cmap.set_bad('dimgrey', 1.)
 plot_options = {
     "vmax": max_data,
@@ -98,7 +103,7 @@ plot_options = {
     "transform": ccrs.PlateCarree(),
 }
 line = ax.imshow(data_transform(basesum[startind+160, ::-1, :], max_data), **plot_options)
-ax.coastlines(color="lightgrey")
+ax.coastlines(color="white")
 plt.title(title_str)
 month, day = date_conv(base_time[startind])
 plt.title(title_str.format(month, day))
@@ -126,7 +131,7 @@ writer = anim.writers['pillow']
 writer = writer(fps=4, metadata=dict(artist='Robin Lamboll'), bitrate=-1)
 
 
-# call the animator.  blit=True means only re-draw the parts that have changed.
+# Call the animator.  blit=True means only re-draw the parts that have changed.
 animation_inst = anim.FuncAnimation(
     fig, animate, init_func=init, frames=endind - startind,
     interval=20, blit=True
