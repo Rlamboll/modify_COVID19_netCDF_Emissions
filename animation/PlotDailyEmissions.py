@@ -30,7 +30,9 @@ else:
     covid_av_ds = nc.Dataset(aviation_covid_file)
     covid_av = covid_av_ds.variables[av_varname][:]
     base_av = base_av_ds.variables[av_varname][:]
-    assert np.allclose(covid_av_ds.variables["time"][:], base_av_ds.variables["time"][:])
+    assert np.allclose(
+        covid_av_ds.variables["time"][:], base_av_ds.variables["time"][:]
+    )
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
@@ -41,8 +43,8 @@ covid_data = nc.Dataset(covid_file)
 baseline_data = nc.Dataset(baseline_file)
 covid = covid_data.variables[varname][:]
 base = baseline_data.variables[varname][:]
-lats = covid_data.variables['lat'][:]
-lons = covid_data.variables['lon'][:]
+lats = covid_data.variables["lat"][:]
+lons = covid_data.variables["lon"][:]
 img_extent = [min(lons), max(lons), min(lats), max(lats)]
 sect_ax = 1
 
@@ -59,7 +61,12 @@ def date_conv(days):
 def interpolate_missing_times(ds, have_times, want_times, lats, lons):
     interpolating_fn = RegularGridInterpolator((have_times, lats, lons), ds)
     return interpolating_fn(
-        [(x, y, z) for x in want_times.filled(np.nan) for y in lats.filled(np.nan) for z in lons.filled(np.nan)]
+        [
+            (x, y, z)
+            for x in want_times.filled(np.nan)
+            for y in lats.filled(np.nan)
+            for z in lons.filled(np.nan)
+        ]
     )
 
 
@@ -67,23 +74,26 @@ base_time = baseline_data.variables["time"][:]
 startind = 0
 endind = 210
 if not calc_nox:
-    basesum = (covid.sum(axis=sect_ax) / base.sum(axis=sect_ax))
+    basesum = covid.sum(axis=sect_ax) / base.sum(axis=sect_ax)
 else:
     # Need to include aviation emissions
     base_av_int = interpolate_missing_times(
         base_av.sum(axis=height_ax),
         base_av_ds.variables["time"][:],
         baseline_data.variables["time"][startind:endind],
-        lats, lons
+        lats,
+        lons,
     ).reshape(endind - startind, len(lats), len(lons))
     covid_av_int = interpolate_missing_times(
         covid_av.sum(axis=height_ax),
         covid_av_ds.variables["time"][:],
         baseline_data.variables["time"][startind:endind],
-        lats, lons
+        lats,
+        lons,
     ).reshape(endind - startind, len(lats), len(lons))
-    basesum = (covid.sum(axis=sect_ax)[startind:endind, ...] + covid_av_int) / \
-              (base.sum(axis=sect_ax)[startind:endind, ...] + base_av_int)
+    basesum = (covid.sum(axis=sect_ax)[startind:endind, ...] + covid_av_int) / (
+        base.sum(axis=sect_ax)[startind:endind, ...] + base_av_int
+    )
 # We want to ensure the max and min values always fit on our scale
 max_data = basesum.max()
 min_data = basesum.min()
@@ -93,7 +103,7 @@ fig = plt.figure(figsize=(8, 4))
 ax = plt.axes(projection=ccrs.PlateCarree())
 
 cmap = matplotlib.cm.get_cmap("inferno")  # "gist_earth"
-cmap.set_bad('dimgrey', 1.)
+cmap.set_bad("dimgrey", 1.0)
 plot_options = {
     "vmax": max_data,
     "vmin": min_data,
@@ -102,7 +112,9 @@ plot_options = {
     "extent": img_extent,
     "transform": ccrs.PlateCarree(),
 }
-line = ax.imshow(data_transform(basesum[startind+160, ::-1, :], max_data), **plot_options)
+line = ax.imshow(
+    data_transform(basesum[startind + 160, ::-1, :], max_data), **plot_options
+)
 ax.coastlines(color="white")
 plt.title(title_str)
 month, day = date_conv(base_time[startind])
@@ -112,29 +124,31 @@ cb.ax.set_ylabel("Emissions proportion")
 
 # initialization function: plot the background of each frame
 def init():
-    line = ax.imshow(data_transform(basesum[startind, ::-1, :], max_data),
-                     **plot_options)
+    line = ax.imshow(
+        data_transform(basesum[startind, ::-1, :], max_data), **plot_options
+    )
     month, day = date_conv(base_time[startind])
     plt.title(title_str.format(month, day))
-    return line,
+    return (line,)
+
 
 # animation function.  This is called sequentially
 def animate(i):
-    line = ax.imshow(data_transform(basesum[startind + i, ::-1, :], max_data),
-                     **plot_options)
+    line = ax.imshow(
+        data_transform(basesum[startind + i, ::-1, :], max_data), **plot_options
+    )
     month, day = date_conv(base_time[startind + i])
     plt.title(title_str.format(month, day))
-    return line,
+    return (line,)
 
 
-writer = anim.writers['pillow']
-writer = writer(fps=4, metadata=dict(artist='Robin Lamboll'), bitrate=-1)
+writer = anim.writers["pillow"]
+writer = writer(fps=4, metadata=dict(artist="Robin Lamboll"), bitrate=-1)
 
 
 # Call the animator.  blit=True means only re-draw the parts that have changed.
 animation_inst = anim.FuncAnimation(
-    fig, animate, init_func=init, frames=endind - startind,
-    interval=20, blit=True
+    fig, animate, init_func=init, frames=endind - startind, interval=20, blit=True
 )
 # Save the animation
 animation_inst.save(savename, writer=writer)
