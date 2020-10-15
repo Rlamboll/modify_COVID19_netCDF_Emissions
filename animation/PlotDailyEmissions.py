@@ -36,7 +36,7 @@ else:
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
-savename = "output/animated_COVID_rel_lin_{}_v6_light.gif".format(varname)
+savename = "output/animated_COVID_rel_lin_{}_v7_light.gif".format(varname)
 
 # Load
 covid_data = nc.Dataset(covid_file)
@@ -111,6 +111,7 @@ plot_options = {
     "origin": "upper",
     "extent": img_extent,
     "transform": ccrs.PlateCarree(),
+    "aspect": 'auto'
 }
 line = ax.imshow(
     data_transform(basesum[startind + 160, ::-1, :], max_data), **plot_options
