@@ -53,11 +53,14 @@ def test_copy_netcdf(compress):
     os.remove(folder + test_file + name_append)
 
 
-def test_insert_interpolated_point():
+@pytest.mark.parametrize("offset", [0, 10])
+def test_insert_interpolated_point(offset):
     new_scc = copy_netcdf_file(test_file, folder, folder, name_append)
+    if offset != 0:
+        new_scc.variables["time"][:] = new_scc.variables["time"][:] + offset
     startsize = len(new_scc.variables["temp"][:, :, :, :])
     startshape = new_scc.variables["temp"][:, :, :, :].shape
-    newtime = 5.5
+    newtime = 5.5 + offset
     expected_results = (
         new_scc.variables["temp"][5, :, :, :] + new_scc.variables["temp"][6, :, :, :]
     ) / 2
@@ -79,7 +82,7 @@ def test_insert_interpolated_point():
     assert np.allclose(
         new_scc.variables["temp"][-3:-1, :, :, :], orig_vals[-3:-1, :, :, :]
     )
-    secondtime = 6.5
+    secondtime = 6.5 + offset
     # This is between
     expected_results_2 = (
         expected_results * 2.5 + new_scc.variables["temp"][10, :, :, :] * 1
