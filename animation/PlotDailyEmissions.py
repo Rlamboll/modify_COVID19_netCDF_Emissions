@@ -10,7 +10,7 @@ import matplotlib.animation as anim
 
 # This script plots animations of the NOx and SO2 data
 
-calc_nox = False  # This switches between SO2 if false and nox if true.
+calc_nox = True  # This switches between SO2 if false and nox if true.
 # Load data
 if not calc_nox:
     baseline_file = "../output/aerosols/v5/daily//cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_baseline.nc"
@@ -18,11 +18,11 @@ if not calc_nox:
     varname = "SO2_em_anthro"
     title_str = "Fraction of usual SO$_2$ emissions due to COVID-19 \n Date: {} {}."
 else:
-    baseline_file = "../output/aerosols/daily.nc"
-    covid_file = "../output/aerosols/daily/.nc"
+    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_baseline.nc"
+    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_1_year.nc"
     av_varname = "NOx_em_AIR_anthro"
-    aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.7.nc"
-    aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_v4.7.nc_flightrd_mp06_daily_v4.7.nc"
+    aviation_base_file = "../output/aviation/v5/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_flightrd_mp12_daily_v5.nc"
+    aviation_covid_file = "../output/aviation/v5/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_daily_v5.nc"
     # Which dimension index is the height (to be summed over)?
     height_ax = 1
     # Read the aviation data
@@ -54,6 +54,7 @@ def data_transform(data, _):
 
 
 def date_conv(days):
+    # We add a day to this because a leap year occurs but is missed out by netcdf
     date = datetime.datetime(year=2015, month=1, day=2) + datetime.timedelta(days=days)
     return date.strftime("%b"), date.day
 
