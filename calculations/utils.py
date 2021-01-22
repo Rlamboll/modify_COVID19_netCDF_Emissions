@@ -11,6 +11,24 @@ def copy_netcdf_file(
     compress=False,
     remove_string=None,
 ):
+    """
+    Copies a netcdf file from one folder to another, optionally appending a string, and
+    returns the file open in memory for modification.
+    :param filename:
+        name of the file to read.
+    :param input_folder: string
+        Folder where the input file is.
+    :param output_folder: string
+        Folder where the output should go.
+    :param scenario_string:
+        String to append on the name of the scenario.
+    :param compress:
+        If true, the file is compressed (default:false).
+    :param remove_string:
+        String to remove from the name of the file.
+    :return: :obj:`netcdf4.DataFrame`
+        The copied file, open in memory.
+    """
     src = nc.Dataset(input_folder + filename)
     if remove_string:
         trg = nc.Dataset(
@@ -47,6 +65,24 @@ def copy_netcdf_file(
 
 
 def insert_interpolated_point(db, time_to_add, ind_before=1, ind_after=1):
+    """
+    Performs an interpolation to add an additional timepoint to a netcdf file,
+    optionally not using the timepoints immediately either side of the added point.
+    :param db: :obj:`netcdf4.DataFrame`
+        Structure into which points should be interpolated
+    :param time_to_add: numerical
+        The time at which a point should be added
+    :param ind_before: int
+        The number of already existing points before the new point to use for
+        interpolating. E.g. to do month-to-month interpolation, use 12 here to reference
+        a month of the same name a year ago in monthly data.
+        Defaults to 1, i.e. point immediately before the new point.
+    :param ind_after: The number of already existing points after the new point to use
+        for interpolating. Defaults to 1, i.e. point immediately after the new point.
+    :return: :obj:`netcdf4.DataFrame`
+        The first input with an additional point interpolated into it
+    """
+
     times = db.variables["time"][:]
     if any(times == time_to_add):
         raise ValueError("time already in the database")
@@ -102,8 +138,31 @@ def cutoff_netcdf_time(
     remove_string=None,
     tstart=None,
 ):
-    # This function cuts off data after a particular time and also compresses it if
-    # compress == True.
+    """
+    This function cuts off data after a particular time and also compresses it if
+    compress == True. The file has "cut_" prepended on the name and saves it to the
+    output folder. The file is open in memory in the returned object.
+
+    :param input_folder: string
+        Folder where the input file is.
+    :param output_folder: string
+        Folder where the output should go.
+    :param filename:
+        name of the file to read.
+    :param tcutoff: numerical
+        End time - times after this will be cut off.
+    :param scenario_string: string
+        String to append on the end of the filename.
+    :param compress: bool
+        If true, (default) the file is compressed.
+    :param remove_string: string
+        If provided, will remove the given string from the name of the copied file.
+    :param tstart: numerical
+        Times before this will be cut off.
+    :return: :obj:`netcdf4.DataFrame`
+        The copied and cropped file, open in memory.
+    """
+
     db = nc.Dataset(input_folder + filename)
     if remove_string:
         trg = nc.Dataset(
@@ -162,8 +221,17 @@ def cutoff_netcdf_time(
 
 
 def cleanup_files(output_folder, working_string, remove_scenario_string=None):
-    # This function removes files from the output folder if the filename ends in ".nc_",
-    # working_string or ".nc" + remove_scenario_string.
+    """
+    This function removes files from the output folder if the filename ends in ".nc_",
+    working_string or ".nc" + remove_scenario_string.
+    :param output_folder: string
+        Folder where files should be removed from.
+    :param working_string: string
+        Files ending in this string will be removed.
+    :param remove_scenario_string: string
+        Files ending in ".nc" followed by this string will be removed.
+    :return:
+    """
     output_files = os.listdir(output_folder)
     deletable_files = [
         file
