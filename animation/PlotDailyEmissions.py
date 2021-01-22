@@ -10,16 +10,16 @@ import matplotlib.animation as anim
 
 # This script plots animations of the NOx and SO2 data
 
-calc_nox = True  # This switches between SO2 if false and nox if true.
+calc_nox = False  # This switches between SO2 if false and nox if true.
 # Load data
 if not calc_nox:
-    baseline_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_baseline.nc"
-    covid_file = "../output/aerosols/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_1_year.nc"
+    baseline_file = "../output/aerosols/v5/daily//cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_baseline.nc"
+    covid_file = "../output/aerosols/v5/daily/cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_1_year.nc"
     varname = "SO2_em_anthro"
     title_str = "Fraction of usual SO$_2$ emissions due to COVID-19 \n Date: {} {}."
 else:
-    baseline_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_baseline.nc"
-    covid_file = "../output/aerosols/daily/cut_NOx-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v4.7.nc_1_year.nc"
+    baseline_file = "../output/aerosols/daily.nc"
+    covid_file = "../output/aerosols/daily/.nc"
     av_varname = "NOx_em_AIR_anthro"
     aviation_base_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_baseline_v4.7.nc"
     aviation_covid_file = "../output/aviation/cut_NOx-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.nc_v4.7.nc_flightrd_mp06_daily_v4.7.nc"
@@ -36,7 +36,7 @@ else:
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
-savename = "output/animated_COVID_rel_lin_{}_v7_light.gif".format(varname)
+savename = "output/v5/animated_COVID_rel_lin_{}_v7_light.gif".format(varname)
 
 # Load
 covid_data = nc.Dataset(covid_file)
