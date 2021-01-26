@@ -5,12 +5,13 @@ import netCDF4 as nc
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from matplotlib import pyplot as plt
-import matplotlib.animation as anim
+import ffmpeg
+from PIL import Image
 
 
 # This script plots animations of the NOx and SO2 data
 
-calc_nox = True  # This switches between SO2 if false and nox if true.
+calc_nox = False  # This switches between SO2 if false and nox if true.
 # Load data
 if not calc_nox:
     baseline_file = "../output/aerosols/v5/daily//cut_SO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IAMC-MESSAGE-GLOBIOM-ssp245-1-1_gn_201501-210012.ncdaily_v5.nc_baseline.nc"
@@ -36,7 +37,8 @@ else:
     varname = "NOx_em_anthro"
     title_str = "Fraction of usual NO$_x$ emissions due to COVID-19 \n Date: {} {}."
 
-savename = "output/v5/animated_COVID_rel_lin_{}_v7_light.gif".format(varname)
+workingsname = "output/v5/workings/{}.jpg"
+savename = "output/v5/animated_COVID_rel_lin_{}_v9_light.mp4".format(varname)
 
 # Load
 covid_data = nc.Dataset(covid_file)
@@ -47,7 +49,6 @@ lats = covid_data.variables["lat"][:]
 lons = covid_data.variables["lon"][:]
 img_extent = [min(lons), max(lons), min(lats), max(lats)]
 sect_ax = 1
-
 
 def data_transform(data, _):
     return data.filled(1)
@@ -73,7 +74,7 @@ def interpolate_missing_times(ds, have_times, want_times, lats, lons):
 
 base_time = baseline_data.variables["time"][:]
 startind = 0
-endind = 210
+endind = 366
 if not calc_nox:
     basesum = covid.sum(axis=sect_ax) / base.sum(axis=sect_ax)
 else:
@@ -115,42 +116,36 @@ plot_options = {
     "aspect": 'auto'
 }
 line = ax.imshow(
-    data_transform(basesum[startind + 160, ::-1, :], max_data), **plot_options
+    data_transform(basesum[startind, ::-1, :], max_data), **plot_options
 )
 ax.coastlines(color="white")
-plt.title(title_str)
 month, day = date_conv(base_time[startind])
-plt.title(title_str.format(month, day))
 cb = fig.colorbar(line, ax=ax, format="%g")
 cb.ax.set_ylabel("Emissions proportion")
 
-# initialization function: plot the background of each frame
-def init():
-    line = ax.imshow(
-        data_transform(basesum[startind, ::-1, :], max_data), **plot_options
-    )
-    month, day = date_conv(base_time[startind])
-    plt.title(title_str.format(month, day))
-    return (line,)
-
-
 # animation function.  This is called sequentially
 def animate(i):
-    line = ax.imshow(
-        data_transform(basesum[startind + i, ::-1, :], max_data), **plot_options
+    ax.imshow(
+        data_transform(basesum[i, ::-1, :], max_data), **plot_options
     )
-    month, day = date_conv(base_time[startind + i])
-    plt.title(title_str.format(month, day))
-    return (line,)
+    month, day = date_conv(base_time[i])
+    plt.title(title_str.format(month, day), loc="left")
 
 
-writer = anim.writers["pillow"]
-writer = writer(fps=4, metadata=dict(artist="Robin Lamboll"), bitrate=-1)
+for time in range(startind, endind):
+    animate(time)
+    plt.savefig(workingsname.format(str(time).zfill(3)), bbox_inches='tight',
+                pad_inches=0.05)
 
+imsize = Image.open(workingsname.format("001")).size
 
-# Call the animator.  blit=True means only re-draw the parts that have changed.
-animation_inst = anim.FuncAnimation(
-    fig, animate, init_func=init, frames=endind - startind, interval=20, blit=True
+# Call the animator.
+response = (
+    ffmpeg.input(
+        workingsname.format('%03d'), pattern_type="sequence", start_number=1, framerate=4
+    ).crop(0, 0, width=int(2*np.floor(imsize[0]/2)), height=int(2*np.floor(imsize[1]/2)))
+    .output(savename)
+    .run(capture_stdout=True, capture_stderr=True, overwrite_output=True)
 )
-# Save the animation
-animation_inst.save(savename, writer=writer)
+
+print (response)
